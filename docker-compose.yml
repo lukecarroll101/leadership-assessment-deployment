@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=${API_URL}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  nginx:
+    image: nginx:1.23
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./app/frontend/build:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+      - frontend
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  backend:
+    build:
+      context: ./app/backend
+      dockerfile: Dockerfile
+      target: production
+    command: npm start
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ADMIN_KEY=${ADMIN_KEY}
+      - FRONTEND_URL=${FRONTEND_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge 
