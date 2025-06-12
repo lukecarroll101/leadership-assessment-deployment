@@ -7,8 +7,11 @@
 **/coverage
 
 # Production
-# Note: We want to keep the frontend build directory
+# First ignore all build directories
+**/build/
+# Then explicitly include the frontend build directory
 !app/frontend/build/
+!app/frontend/build/**
 
 # Misc
 .DS_Store
