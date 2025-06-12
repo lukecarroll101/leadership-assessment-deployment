@@ -183,6 +183,7 @@ const Assessment: React.FC = () => {
   const [rating, setRating] = React.useState<number | null>(null);
   const [openResponse, setOpenResponse] = React.useState("");
   const [type, setType] = React.useState<"leader" | "rater" | null>(null);
+  const isRequestInProgress = React.useRef(false);
 
   React.useEffect(() => {
     const leaderToken = searchParams.get("leader_token");
@@ -199,6 +200,9 @@ const Assessment: React.FC = () => {
 
     // Start assessment
     const startAssessment = async () => {
+      if (isRequestInProgress.current) return;
+      isRequestInProgress.current = true;
+
       try {
         const response = await axios.post(
           `${process.env.REACT_APP_API_URL}/api/assessment/start`,
@@ -206,13 +210,15 @@ const Assessment: React.FC = () => {
             encrypted_leader_identifier: leaderToken,
             encrypted_rater_identifier: raterToken,
           },
-          { params: { token: raterToken } } // Using rater token for validation
+          { params: { token: raterToken } }
         );
         setAssessmentId(response.data.assessmentId);
         setLoading(false);
       } catch (err) {
         setError("Failed to start assessment");
         setLoading(false);
+      } finally {
+        isRequestInProgress.current = false;
       }
     };
 

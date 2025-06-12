@@ -35,7 +35,7 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./app/frontend/build:/usr/share/nginx/html:ro
     depends_on:
-      - api
+      - backend
       - frontend
     networks:
       - app-network
@@ -89,7 +89,7 @@ services:
       - POSTGRES_DB=${DB_NAME}
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./data/init:/docker-entrypoint-initdb.d:ro
     networks:
       - app-network
     restart: unless-stopped

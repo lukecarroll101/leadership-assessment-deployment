@@ -47,6 +47,8 @@ app.use(limiter);
 // Body parsing middleware
 app.use(express.json());
 
+console.log("DATABASE_URL", process.env.DATABASE_URL);
+
 // Initialize database connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -99,6 +101,7 @@ const createLeaderHash = (leaderData: any): string => {
 app.post("/api/assessment/start", validateToken, async (req, res) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] Starting new assessment`);
+  console.log("req.body", req.body);
 
   try {
     const { role } = req.body.decryptedToken;

@@ -18,8 +18,8 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Copy built assets from build stage
-COPY --from=build /app/build /usr/share/nginx/html
+# Copy pre-built assets from local build
+COPY ./build /usr/share/nginx/html
 
 # Expose port
 EXPOSE 80
